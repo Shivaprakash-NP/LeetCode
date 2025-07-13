@@ -1,0 +1,128 @@
+Okay, let's break down how to solve the "Number of Enclaves" problem and then discuss a common Java approach.
+
+**Understanding the Problem: Number of Enclaves**
+
+You're given a 2D grid (a matrix) representing a landscape.  Each cell in the grid is either:
+
+*   `0`: Represents water.
+*   `1`: Represents land.
+
+The goal is to find the number of land cells (`1`s) that are **completely surrounded by water**.  In other words, you want to count the land cells that cannot reach the boundary (the edge) of the grid by traveling through connected land cells.  Land cells are considered connected if they are horizontally or vertically adjacent.
+
+**The Key Idea: Eliminating Border-Connected Land**
+
+The most efficient way to solve this is to:
+
+1.  **Identify and "remove" (mark as water) all land cells connected to the grid's boundary.** These are the land cells that *can* escape.  We can use a Depth-First Search (DFS) or Breadth-First Search (BFS) to find all the connected land cells starting from the boundaries.
+
+2.  **Count the remaining land cells.**  After removing the escapable land, the remaining land cells are the ones completely enclosed by water (the "enclaves").
+
+**A Java Solution with Depth-First Search (DFS)**
+
+Here's a Java implementation demonstrating this approach:
+
+```java
+class Solution {
+    public int numEnclaves(int[][] grid) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+
+        // 1. Eliminate land connected to the boundary
+        for (int i = 0; i < rows; i++) {
+            if (grid[i][0] == 1) {
+                dfs(grid, i, 0); // Left boundary
+            }
+            if (grid[i][cols - 1] == 1) {
+                dfs(grid, i, cols - 1); // Right boundary
+            }
+        }
+
+        for (int j = 0; j < cols; j++) {
+            if (grid[0][j] == 1) {
+                dfs(grid, 0, j); // Top boundary
+            }
+            if (grid[rows - 1][j] == 1) {
+                dfs(grid, rows - 1, j); // Bottom boundary
+            }
+        }
+
+        // 2. Count the remaining land cells
+        int enclaveCount = 0;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == 1) {
+                    enclaveCount++;
+                }
+            }
+        }
+
+        return enclaveCount;
+    }
+
+    // Depth-First Search to mark connected land cells as water
+    private void dfs(int[][] grid, int row, int col) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+
+        // Base cases:
+        if (row < 0 || row >= rows || col < 0 || col >= cols || grid[row][col] == 0) {
+            return; // Out of bounds or already water
+        }
+
+        // Mark the current cell as water (visited)
+        grid[row][col] = 0;
+
+        // Recursively explore adjacent land cells
+        dfs(grid, row + 1, col); // Down
+        dfs(grid, row - 1, col); // Up
+        dfs(grid, row, col + 1); // Right
+        dfs(grid, row, col - 1); // Left
+    }
+}
+```
+
+**Explanation:**
+
+1.  **`numEnclaves(int[][] grid)` Function:**
+    *   Gets the dimensions of the grid (number of rows and columns).
+    *   Iterates through the boundaries (top, bottom, left, right) of the grid.
+    *   If a boundary cell is land (`grid[i][j] == 1`), it calls the `dfs()` function to "flood fill" the connected land with water, starting from that cell.
+    *   After the boundary processing, it iterates through the entire grid again.
+    *   It counts the remaining land cells (`grid[i][j] == 1`) and returns this count as the number of enclaves.
+
+2.  **`dfs(int[][] grid, int row, int col)` Function (Depth-First Search):**
+    *   **Base Cases:**  These are the conditions that stop the recursion:
+        *   `row < 0 || row >= rows || col < 0 || col >= cols`: Checks if the current cell is out of bounds.  If it is, we've gone off the grid, so we stop.
+        *   `grid[row][col] == 0`: Checks if the current cell is already water (or has already been visited).  If it is, there's nothing more to explore in this direction, so we stop.
+    *   **Mark as Visited:** `grid[row][col] = 0;`  This is crucial.  We mark the current land cell as water to prevent infinite loops and to indicate that we've processed it.
+    *   **Recursive Calls:**  We recursively call `dfs()` on the four neighboring cells (up, down, left, right) to explore the connected land.
+
+**How it Works (Example):**
+
+Imagine a simple grid:
+
+```
+1 1 0 0
+0 0 0 0
+0 1 1 1
+1 0 1 1
+```
+
+1.  The code first finds the `1`s on the boundaries.
+
+2.  Starting from the top-left `1`, `dfs()` is called. It changes the top-left `1` to `0` and recursively explores its neighbors. The other `1` on the top row is also flipped to `0`.
+
+3.  Starting from the bottom-left `1`, `dfs()` is called, flipping it to `0`.
+
+4.  Starting from the bottom row, the two rightmost 1's will be flipped to 0 by dfs().
+
+5.  Finally, the code counts the remaining `1`s in the grid.  These are the cells that were not reachable from the boundary and thus form enclaves.  In this case, the middle `1 1 1` on the third row will not be touched by dfs() and will remain as `1`s.
+
+**Why DFS (or BFS) is a Good Choice:**
+
+*   **Connectivity:**  DFS (or BFS) is naturally suited for exploring connected components in a graph (or in this case, a grid).
+*   **Efficiency:**  It efficiently identifies all the land cells reachable from the boundary.
+
+**In Simple Terms:**
+
+Think of it like this: You're trying to find islands that are completely surrounded by water. You first find all the islands that are connected to the ocean (the grid's boundary) and "sink" them (turn them into water). Then, you simply count the remaining islands, which are the true "enclaves" that you're looking for.
